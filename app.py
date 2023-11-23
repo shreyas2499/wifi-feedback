@@ -6,6 +6,8 @@ import json
 import jwt
 from datetime import datetime, timedelta
 import hashlib
+import numpy as np
+import pandas as pd
 
 
 app = Flask(__name__)
@@ -15,8 +17,6 @@ salt = "pwdHasher"
 app.config["MONGO_URI"] = "mongodb://localhost:27017/wifiFeedback"
 mongo = PyMongo(app)
 
-# To run the Flask app
-app.run(port=8000, debug=True)
 
 
 # Constants
@@ -125,3 +125,188 @@ def resetPassword():
     except Exception as e:
         print(e)
         return jsonify({STATUS_MESSAGE: "Password update failed"}), 500
+    
+
+
+
+
+# Review related APIs
+
+@app.route("/addReview", methods=["POST"])
+def add_review():
+    data = json.loads(request.data)
+
+    review = data["review"]
+    wifiName = data["name"]
+    wifiID = data["wifiID"]
+    user = data["user"]
+    lat = data.get("lat", False)
+    long = data.get("long", False)
+    provider = data["provider"]
+    borough = int(data["borough"])    # Assuming Borough ID is getting passed.
+
+
+    try:
+        review_data = {
+            "review": review,
+            "datetime": datetime.today(),
+            "user": user
+        }
+        query = {"wifiID":wifiID, "Borough": borough, "Provider": provider, "Name": wifiName}
+        update = {"$addToSet": {"Reviews": review_data}}
+
+        mongo.db.wifiList.update_one(query, update, upsert=True)
+    
+        return jsonify({STATUS_MESSAGE: "Review added"}), 200
+    except Exception as e:
+        print(e)
+
+    return jsonify({STATUS_MESSAGE: "Adding of review failed"}), 500
+
+
+@app.route("/getReviews", methods=["GET"])
+def get_reviews():
+    data = json.loads(request.data)
+
+    wifiID = data["wifiID"]
+    wifiName = data["name"]
+    provider = data["provider"]
+    borough = int(data["borough"])    # Assuming Borough ID is getting passed.
+
+    try:
+       
+        query = {"wifiID": wifiID, "Borough": borough, "Provider": provider, "Name": wifiName}
+        projectionQuery = {"Reviews":1, "_id":0}
+
+        reviewList = mongo.db.wifiList.find_one(query, projectionQuery)
+
+        return jsonify({STATUS: "Review Comments", "data": reviewList}), 200
+    except Exception as e:
+        print(e)
+
+    return jsonify({STATUS_MESSAGE: "Review fetch failed"}), 500
+
+
+
+# Wifi Related APIs
+
+@app.route("/getWifiList", methods=["GET"])
+def get_wifi():
+    # Provider
+    # Borough Name
+
+    data = json.loads(request.data)
+
+    provider = data.get("provider", False)
+    borough = data.get("boroughName", False)
+
+    query = {}
+    if(provider):
+        query["Provider"] = provider
+    elif(borough):
+        query["Borough Name"] = borough
+    
+
+    projectionQuery = {"_id":0} # Add projections based on what is required 
+
+    try: 
+        wifis = mongo.db.wifiList.find(query, projectionQuery)
+        return jsonify({STATUS: "List of Wifis", "data": list(wifis)}), 200
+
+    except Exception as e:
+        print(e)
+        return jsonify({STATUS_MESSAGE: "Wifi fetch failed"}), 500
+
+
+@app.route("/addWifi", methods=["POST"])
+def add_wifi():
+    data = json.loads(request.data)
+
+    admin = data.get("admin", False)   # Get this value from the decoded token
+
+
+    # UPDATE THIS DEPENDING ON WHAT VALUES ARE REQUIRED IN THE FRONTEND
+    if admin:
+        # Add wifi ID here
+        wifiName = data["name"]
+        lat = data.get("lat", False)
+        long = data.get("long", False)
+        provider = data["provider"]
+        borough = int(data["borough"])    # Assuming Borough ID is getting passed.
+        boroughName = data["boroughName"]
+
+        try: 
+            query = {
+                "Provider":provider,
+                "Name": wifiName,
+                "Latitude": lat,
+                "Longitude": long,
+                "Borough": borough,
+                "Borough Name": boroughName,
+                "Activated": datetime.today()
+            }
+            mongo.db.wifiList.insert_one(query)
+            return jsonify({STATUS: "Wifi Added Successfully"}), 200
+
+        except Exception as e:
+            print(e)
+            return jsonify({STATUS_MESSAGE: "Wifi Not added"}), 500
+
+    else:
+        return jsonify({STATUS_MESSAGE: "User doesn't have permission to add Wifis"}), 401
+
+
+
+
+# Adding the dataset to DB
+
+# Run this only once manually
+@app.route("/insertValues", methods=["POST"])
+def insert_values():
+    df = pd.read_csv("wifi.csv")    
+
+    df = df.reset_index()  # make sure indexes pair with number of rows
+    wifiData = []
+    for index, row in df.iterrows():
+        res = {
+            "wifiID": str(row["OBJECTID"]),
+            "borough": str(row["Borough"]),
+            "type": row["Type"],
+            "provider": row["Provider"],
+            "wifiName": row["Name"],
+            "location": str(row["Location"]),
+            "latitude": str(row["Latitude"]),
+            "longitude": str(row["Longitude"]),
+            "x": str(row["X"]),
+            "y": str(row["Y"]),
+            "locationT": row["Location_T"],
+            "remarks": row["Remarks"],
+            "city": row["City"],
+            "ssid": str(row["SSID"]),
+            "sourceID": str(row["SourceID"]),
+            "activated": datetime.strptime(row["Activated"], "%m/%d/%Y"),
+            "boroCode": str(row["BoroCode"]),
+            "boroughName": row["Borough Name"],
+            "ntaCode": str(row["Neighborhood Tabulation Area Code (NTACODE)"]),
+            "nta": str(row["Neighborhood Tabulation Area (NTA)"]),
+            "councilDistrict": str(row["Council Distrcit"]),
+            "postcode": str(row["Postcode"]),
+            "boroCD": str(row["BoroCD"]),
+            "censusTract": str(row["Census Tract"]),
+            "BCTCB2010": str(row["BCTCB2010"]),
+            "bin": str(row["BIN"]),
+            "bbl": str(row["BBL"]),
+            "doittID": str(row["DOITT_ID"]),
+            "coordinates": str(row["Location (Lat, Long)"])
+        }
+
+        wifiData.append(res)
+
+        mongo.db.wifiList.insert_one(res)
+
+    return jsonify({STATUS: "Wifi Added Successfully to Database"}), 200
+
+
+if __name__ == "__main__":
+    # To run the Flask app
+    app.run(port=8000, debug=True)
