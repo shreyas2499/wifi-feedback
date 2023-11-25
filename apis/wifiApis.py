@@ -137,13 +137,13 @@ def add_review():
     data = json.loads(request.data)
 
     review = data["review"]
-    wifiName = data["name"]
+    wifiName = data["wifiName"]
     wifiID = data["wifiID"]
     user = data["user"]
     lat = data.get("lat", False)
     long = data.get("long", False)
     provider = data["provider"]
-    borough = int(data["borough"])    # Assuming Borough ID is getting passed.
+    borough = data["borough"]    # Assuming Borough ID is getting passed.
 
 
     try:
@@ -152,10 +152,10 @@ def add_review():
             "datetime": datetime.today(),
             "user": user
         }
-        query = {"wifiID":wifiID, "Borough": borough, "Provider": provider, "Name": wifiName}
-        update = {"$addToSet": {"Reviews": review_data}}
+        query = {"wifiID":wifiID, "borough": borough, "provider": provider, "wifiName": wifiName}
+        update = {"$addToSet": {"reviews": review_data}}
 
-        mongo.db.wifiList.update_one(query, update, upsert=True)
+        mongo.db.wifiList.update_one(query, update)
     
         return jsonify({STATUS_MESSAGE: "Review added"}), 200
     except Exception as e:
@@ -195,7 +195,9 @@ def get_wifi():
     # Provider
     # Borough Name
 
-    data = json.loads(request.data)
+    # data = json.loads(request.data)
+
+    data = {}
 
     provider = data.get("provider", False)
     borough = data.get("boroughName", False)
@@ -258,16 +260,27 @@ def add_wifi():
 
 
 
+# Add API to check uniqueness of wifiID
+
+
 # Adding the dataset to DB
 
 # Run this only once manually
 @app.route("/insertValues", methods=["POST"])
 def insert_values():
-    df = pd.read_csv("wifi.csv")    
+    df = pd.read_csv("./wifi.csv")    
 
     df = df.reset_index()  # make sure indexes pair with number of rows
+
+    df = df[df['Name'].notna()]
+
+    df.replace(np.nan, '')
+
     wifiData = []
     for index, row in df.iterrows():
+        # print(row["Name"], "\n")
+        if(str(row["Name"]) == "nan"):
+            continue
         res = {
             "wifiID": str(row["OBJECTID"]),
             "borough": str(row["Borough"]),
@@ -280,7 +293,7 @@ def insert_values():
             "x": str(row["X"]),
             "y": str(row["Y"]),
             "locationT": row["Location_T"],
-            "remarks": row["Remarks"],
+            "remarks": row["Remarks"] if str(row["Remarks"]) != "nan" else "",
             "city": row["City"],
             "ssid": str(row["SSID"]),
             "sourceID": str(row["SourceID"]),
@@ -303,6 +316,8 @@ def insert_values():
         wifiData.append(res)
 
         mongo.db.wifiList.insert_one(res)
+    
+    # mongo.db.wifiList.update({"remarks": {"$eq": "NaN"}}, {"$set": {"remarks": ""}}, {"multi": True})
 
     return jsonify({STATUS: "Wifi Added Successfully to Database"}), 200
 
