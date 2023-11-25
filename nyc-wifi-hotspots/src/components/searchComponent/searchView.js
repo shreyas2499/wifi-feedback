@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Modal, ModalBody, ModalFooter, ModalHeader, Input, Table, Card, CardBod, CardTitle, CardBody, CardSubtitle, CardLink, CardText } from 'reactstrap';
+import { Form, Row, Col, FormGroup, Label, Button, Modal, ModalBody, ModalFooter, ModalHeader, Input, Table, Card, CardBod, CardTitle, CardBody, CardSubtitle, CardLink, CardText } from 'reactstrap';
 import { getWifiList } from "../../allEndPoints/router"
 import "./searchView.css"
 import Caret from "../iconsComponent/caretDown"
@@ -13,12 +13,23 @@ export default function SearchView() {
     const [borSort, setBorSort] = useState(null)
     const [reviewPopup, setReviewPopup] = useState(false);
     const [selectedHotspot, setSelectedHotspot] = useState([]);
-    const [addedReview, setAddedReview] = useState("");
+    const [wifiIDFilter, setWifiID] = useState("");
+    const [wifiName, setWifiName] = useState("");
+    const [wifiBorough, setBorough] = useState("");
+    const [wifiProvider, setProvider] = useState("");
 
     useEffect(() => {
-        fetch(getWifiList, {
-            method: "GET",
-        })
+        const requestOptions = {
+            method: "POST", 
+            body: JSON.stringify({
+              "wifiName": "",
+              "wifiID": "",
+              "provider": "",
+              "borough": ""
+            })
+        }
+
+        fetch(getWifiList, requestOptions)
             .then(response => response.json())
             .then(data => {
                 console.log("Loaded hotspots:", data);
@@ -27,25 +38,25 @@ export default function SearchView() {
     }, []);
 
     const sorting = (col) => {
-        if(col == "wifiID"){
+        if (col == "wifiID") {
             setIdSort(!idSort)
             setNameSort(false)
             setProvSort(false)
             setBorSort(false)
         }
-        else if(col =="wifiName"){
+        else if (col == "wifiName") {
             setIdSort(false)
             setNameSort(!nameSort)
             setProvSort(false)
             setBorSort(false)
         }
-        else if(col =="provider"){
+        else if (col == "provider") {
             setIdSort(false)
             setNameSort(false)
             setProvSort(!provSort)
             setBorSort(false)
         }
-        else if(col =="boroughName"){
+        else if (col == "boroughName") {
             setIdSort(false)
             setNameSort(false)
             setProvSort(false)
@@ -53,15 +64,15 @@ export default function SearchView() {
         }
 
 
-        if (order === "ASC"){
-            const sorted = [...hotspots].sort((a,b) => 
+        if (order === "ASC") {
+            const sorted = [...hotspots].sort((a, b) =>
                 a[col].toLowerCase() > b[col].toLowerCase() ? 1 : -1
             )
             setHotspots(sorted);
             setOrder("DSC");
         }
-        if (order === "DSC"){
-            const sorted = [...hotspots].sort((a,b) => 
+        if (order === "DSC") {
+            const sorted = [...hotspots].sort((a, b) =>
                 a[col].toLowerCase() < b[col].toLowerCase() ? 1 : -1
             )
             setHotspots(sorted);
@@ -78,6 +89,43 @@ export default function SearchView() {
 
     const toggle = () => setReviewPopup(!reviewPopup);
 
+
+    function id(e){
+        setWifiID(e.target.value)
+    }
+
+    function name(e){   
+        setWifiName(e.target.value)
+    }
+    
+    function borough(e){
+        setBorough(e.target.value)
+    }
+
+    function provider(e){
+        setProvider(e.target.value)
+    }
+
+
+    function submitFilter(){
+        const requestOptions = {
+            method: "POST", 
+            body: JSON.stringify({
+              "wifiName": wifiName,
+              "wifiID": wifiIDFilter,
+              "provider": wifiProvider,
+              "borough": wifiBorough
+            })
+        }
+
+        fetch(getWifiList, requestOptions)
+            .then(response => response.json())
+            .then(data => {
+                console.log("Loaded hotspots:", data);
+                setHotspots(data.data)
+            });
+    }
+
     return (
         <>
             <header className="App-header">
@@ -85,10 +133,81 @@ export default function SearchView() {
             </header>
 
             <div className='container'>
+                <Form>
+                    <Row>
+                        <Col md={2}>
+                            <FormGroup>
+                                <Label for="wifiID">
+                                    WifiID
+                                </Label>
+                                <Input
+                                    id="wifiID"
+                                    name="wifiID"
+                                    placeholder="Enter an ID..."
+                                    type="text"
+                                    onChange={(e) => id(e)}
+                                />
+                            </FormGroup>
+                        </Col>
+                        <Col md={6}>
+                            <FormGroup>
+                                <Label for="wifiName">
+                                    Wifi name
+                                </Label>
+                                <Input
+                                    id="wifiName"
+                                    name="wifiName"
+                                    placeholder="Enter a wifi name..."
+                                    type="text"
+                                    onChange={(e) => name(e)}
+                                />
+                            </FormGroup>
+                        </Col>
+                        <Col md={4}>
+                            <FormGroup>
+                                <Label for="boroughName">
+                                    Borough
+                                </Label>
+                                <Input
+                                    id="boroughName"
+                                    name="boroughName"
+                                    placeholder="Enter a Borough..."
+                                    type="text"
+                                    onChange={(e) => borough(e)}
+                                />
+                            </FormGroup>
+                        </Col>
+                        <Col md={6}>
+                            <FormGroup>
+                                <Label for="provider">
+                                    Provider
+                                </Label>
+                                <Input
+                                    id="provider"
+                                    name="provider"
+                                    placeholder="Enter the Provider name..."
+                                    type="text"
+                                    onChange={(e) => provider(e)}
+                                />
+                            </FormGroup>
+                        </Col>
 
+                        <Col md={6}>
+                            <FormGroup>
+                                <Label for="search">
+                                    {/* Provider */}
+                                </Label>
+                                <br />
+                                <Button style={{marginTop: "2%"}} onClick={() => submitFilter()}  color="success">
+                                    Search
+                                </Button>
+                            </FormGroup>
+                        </Col>
+                    </Row>
+                </Form>
             </div>
 
-            <div className="container"> 
+            <div className="container">
                 <Table bordered hover striped>
                     <thead>
                         <tr>
@@ -96,16 +215,16 @@ export default function SearchView() {
                                 Sl. No
                             </th>
                             <th className="cursorStyle" onClick={() => sorting("wifiID")}>
-                                WifiID <Caret direction={idSort? "desc" : "asc"}/>
+                                WifiID <Caret direction={idSort ? "desc" : "asc"} />
                             </th>
                             <th className="cursorStyle" onClick={() => sorting("wifiName")}>
-                                Wifi Name <Caret direction={nameSort? "desc" :"asc"}/>
+                                Wifi Name <Caret direction={nameSort ? "desc" : "asc"} />
                             </th>
                             <th className="cursorStyle" onClick={() => sorting("provider")}>
-                                Provider <Caret direction={provSort? "desc" : "asc"}/>
+                                Provider <Caret direction={provSort ? "desc" : "asc"} />
                             </th>
                             <th className="cursorStyle" onClick={() => sorting("boroughName")}>
-                                Borough <Caret direction={borSort? "desc": "asc"}/>
+                                Borough <Caret direction={borSort ? "desc" : "asc"} />
                             </th>
                         </tr>
                     </thead>

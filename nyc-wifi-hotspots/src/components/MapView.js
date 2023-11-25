@@ -22,15 +22,24 @@ export default function MapView() {
     const [addedReview, setAddedReview] = useState("");
 
     useEffect(() => {
-        fetch(getWifiList, {
-            method: "GET",
-        })
+        const requestOptions = {
+            method: "POST", 
+            body: JSON.stringify({
+              "wifiName": "",
+              "wifiID": "",
+              "provider": "",
+              "borough": ""
+            })
+        }
+
+        fetch(getWifiList, requestOptions)
             .then(response => response.json())
             .then(data => {
                 console.log("Loaded hotspots:", data);
                 setHotspots(data.data)
             });
     }, []);
+
 
     function handleMarkerClick(hotspot) {
         setReviewPopup(false);
@@ -45,9 +54,17 @@ export default function MapView() {
     }
 
     function fetchWfi() {
-        fetch(getWifiList, {
-            method: "GET",
-        })
+        const requestOptions = {
+            method: "POST", 
+            body: JSON.stringify({
+              "wifiName": "",
+              "wifiID": "",
+              "provider": "",
+              "borough": ""
+            })
+        }
+
+        fetch(getWifiList, requestOptions)
             .then(response => response.json())
             .then(data => {
                 console.log("Loaded hotspots:", data);
