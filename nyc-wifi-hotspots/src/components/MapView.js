@@ -166,20 +166,20 @@ export default function MapView() {
         }
     }
 
-    function something(e) {
+    function setWifiNameValue(e) {
         setNewWifi(e.target.value);
     }
 
-    function something2(e) {
+    function setWifiIDValue(e) {
         console.log(e.target.value)
         setNewWifiID(e.target.value);
     }
 
-    function something3(e) {
+    function setProviderValue(e) {
         setNewProv(e.target.value)
     }
 
-    function something4(e) {
+    function setBoroughValue(e) {
         setNewBoro(e.target.value)
     }
 
@@ -257,10 +257,10 @@ export default function MapView() {
                     <Form>
                         <Row>
                             <Col md={6}>
-                                <Input onChange={(e) => something(e)} placeholder='Enter the wifi name' />
+                                <Input onChange={(e) => setWifiNameValue(e)} placeholder='Enter the wifi name' />
                             </Col>
                             <Col md={6}>
-                                <Input onChange={(e) => something2(e)} placeholder='Enter a unique wifi ID' />
+                                <Input onChange={(e) => setWifiIDValue(e)} placeholder='Enter a unique wifi ID' />
                             </Col>
                         </Row>
                         <br/>
@@ -275,10 +275,10 @@ export default function MapView() {
                         <br/>
                         <Row>
                             <Col md={6}>
-                                <Input onChange={(e) => something3(e)} placeholder='Enter the name of the Provider' />
+                                <Input onChange={(e) => setProviderValue(e)} placeholder='Enter the name of the Provider' />
                             </Col>
                             <Col md={6}>
-                                <Input onChange={(e) => something4(e)} placeholder='Enter the Borough' />
+                                <Input onChange={(e) => setBoroughValue(e)} placeholder='Enter the Borough' />
                             </Col>
                         </Row>
                     </Form>
