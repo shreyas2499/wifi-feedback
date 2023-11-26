@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
-import { getWifiList, addReview } from "../allEndPoints/router"
+import { getWifiList, addReview, checkUniqueness, addWifiEndpoint } from "../allEndPoints/router"
 
-import { Button, Modal, ModalBody, ModalFooter, ModalHeader, Input, Table, Card, CardBod, CardTitle, CardBody, CardSubtitle, CardLink, CardText } from 'reactstrap';
+import { Alert, Row, Col, Form, Button, Modal, ModalBody, ModalFooter, ModalHeader, Input, Table, Card, CardBod, CardTitle, CardBody, CardSubtitle, CardLink, CardText } from 'reactstrap';
 
 const containerStyle = {
     width: '100%',
@@ -21,14 +21,22 @@ export default function MapView() {
     const [selectedHotspot, setSelectedHotspot] = useState([]);
     const [addedReview, setAddedReview] = useState("");
 
+    const [newLat, setnewLat] = useState(0);
+    const [newLong, setNewLong] = useState(0);
+    const [addWifi, setAddWifi] = useState(false);
+    const [newWifiName, setNewWifi] = useState("");
+    const [newProv, setNewProv] = useState("");
+    const [newBoro, setNewBoro] = useState("");
+    const [newWifiID, setNewWifiID] = useState("");
+
     useEffect(() => {
         const requestOptions = {
-            method: "POST", 
+            method: "POST",
             body: JSON.stringify({
-              "wifiName": "",
-              "wifiID": "",
-              "provider": "",
-              "borough": ""
+                "wifiName": "",
+                "wifiID": "",
+                "provider": "",
+                "borough": ""
             })
         }
 
@@ -55,12 +63,12 @@ export default function MapView() {
 
     function fetchWfi() {
         const requestOptions = {
-            method: "POST", 
+            method: "POST",
             body: JSON.stringify({
-              "wifiName": "",
-              "wifiID": "",
-              "provider": "",
-              "borough": ""
+                "wifiName": "",
+                "wifiID": "",
+                "provider": "",
+                "borough": ""
             })
         }
 
@@ -72,6 +80,68 @@ export default function MapView() {
             });
     }
 
+
+    function getClickedPoints(ev) {
+        setnewLat(ev.latLng.lat())
+        setNewLong(ev.latLng.lng())
+        console.log("latitide = ", ev.latLng.lat());
+        console.log("longitude = ", ev.latLng.lng());
+        toggleNew();
+    }
+
+    function addNewWifi() {
+        console.log(newWifiID)
+        if (newWifiName !== '' && newWifiID !== "" && newProv !== "" && newBoro !== "" && newLat != "" && newLong !== "") {
+            fetch(checkUniqueness + "?id=" + newWifiID, {
+                method: "GET"
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data['unique']) {
+                        const requestOptions = {
+                            method: "POST",
+                            body: JSON.stringify({
+                                "wifiName": newWifiName,
+                                "wifiID": newWifiID,
+                                "provider": newProv,
+                                "borough": newBoro,
+                                "latitude": newLat,
+                                "longitude": newLong,
+                                "admin": true // Change this based on the auth token details
+                            })
+                        }
+
+                        fetch(addWifiEndpoint, requestOptions)
+                            .then(response => response.json())
+                            .then(data => {
+                                const requestOptions = {
+                                    method: "POST",
+                                    body: JSON.stringify({
+                                        "wifiName": "",
+                                        "wifiID": "",
+                                        "provider": "",
+                                        "borough": ""
+                                    })
+                                }
+
+                                fetch(getWifiList, requestOptions)
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        console.log("Loaded hotspots:", data);
+                                        setHotspots(data.data)
+                                        toggleNew()
+                                    });
+                            });
+                    }
+                });
+
+        }
+        else{
+            <Alert color="primary">
+              Hey! Pay attention.
+            </Alert>
+        }
+    }
 
     function addReviewToDB() {
         if (addedReview != "") {
@@ -93,11 +163,30 @@ export default function MapView() {
                 .then(response => response.json())
                 .then(fetchWfi)
                 .then(toggle)
-
         }
     }
 
+    function something(e) {
+        setNewWifi(e.target.value);
+    }
+
+    function something2(e) {
+        console.log(e.target.value)
+        setNewWifiID(e.target.value);
+    }
+
+    function something3(e) {
+        setNewProv(e.target.value)
+    }
+
+    function something4(e) {
+        setNewBoro(e.target.value)
+    }
+
+
     const toggle = () => setReviewPopup(!reviewPopup);
+
+    const toggleNew = () => setAddWifi(!addWifi);
 
     return (
         <>
@@ -107,6 +196,7 @@ export default function MapView() {
                     mapContainerStyle={containerStyle}
                     center={center}
                     zoom={10}
+                    onClick={ev => getClickedPoints(ev)}
                 >
                     {hotspots.map((hotspot, index) => (
                         <Marker
@@ -152,6 +242,52 @@ export default function MapView() {
                         Submit
                     </Button>{' '}
                     <Button color="secondary" onClick={toggle}>
+                        Close
+                    </Button>
+                </ModalFooter>
+            </Modal>
+
+
+
+            <Modal isOpen={addWifi} toggle={toggleNew} fade="true" size='lg'>
+                <ModalHeader toggle={toggleNew}>Hello, Admin! Enter the new Wifi details below</ModalHeader>
+                <ModalBody>
+
+
+                    <Form>
+                        <Row>
+                            <Col md={6}>
+                                <Input onChange={(e) => something(e)} placeholder='Enter the wifi name' />
+                            </Col>
+                            <Col md={6}>
+                                <Input onChange={(e) => something2(e)} placeholder='Enter a unique wifi ID' />
+                            </Col>
+                        </Row>
+                        <br/>
+                        <Row>
+                            <Col md={6}>
+                                <Input disabled value={"Lat: " + newLat} />
+                            </Col>
+                            <Col md={6}>
+                                <Input disabled value={"Long: " + newLong} />
+                            </Col>
+                        </Row>
+                        <br/>
+                        <Row>
+                            <Col md={6}>
+                                <Input onChange={(e) => something3(e)} placeholder='Enter the name of the Provider' />
+                            </Col>
+                            <Col md={6}>
+                                <Input onChange={(e) => something4(e)} placeholder='Enter the Borough' />
+                            </Col>
+                        </Row>
+                    </Form>
+                </ModalBody>
+                <ModalFooter>
+                    <Button color="primary" onClick={addNewWifi}>
+                        Submit
+                    </Button>{' '}
+                    <Button color="secondary" onClick={toggleNew}>
                         Close
                     </Button>
                 </ModalFooter>
