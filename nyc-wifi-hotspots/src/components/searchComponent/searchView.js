@@ -3,6 +3,7 @@ import { Form, Row, Col, FormGroup, Label, Button, Modal, ModalBody, ModalFooter
 import { getWifiList } from "../../allEndPoints/router"
 import "./searchView.css"
 import Caret from "../iconsComponent/caretDown"
+import CustomNavbarView from "../customNavbarComponent/customNavbarView"
 
 export default function SearchView() {
     const [hotspots, setHotspots] = useState([]);
@@ -128,12 +129,9 @@ export default function SearchView() {
 
     return (
         <>
-            <header className="App-header">
-                <h1>NYC Wi-Fi Hotspots Explorer</h1>
-            </header>
-
-            <div className='container'>
-                <Form>
+           <CustomNavbarView/>
+            <div className='container addedStyles' style={{border: "1px solid!important", marginTop: "10px!important", marginBottom: "10px!important"}}>
+                <Form style={{marginTop: "15px", marginBottom: "15px"}}>
                     <Row>
                         <Col md={2}>
                             <FormGroup>

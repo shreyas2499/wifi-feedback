@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import MapView from '../MapView';
+import MapView from '../mapViewComponent/MapView';
 import { Routes, Route } from 'react-router-dom';
+import CustomNavbarView from "../customNavbarComponent/customNavbarView"
 
 export default function HomeView() {
     return (
         <>
             <div className="App">
-                <header className="App-header">
-                    <h1>NYC Wi-Fi Hotspots Explorer</h1>
-                </header>
+                <CustomNavbarView/>
                 <main>
                     <MapView />
                 </main>

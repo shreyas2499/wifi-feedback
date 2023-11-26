@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
-import { getWifiList, addReview, checkUniqueness, addWifiEndpoint } from "../allEndPoints/router"
+import { getWifiList, addReview, checkUniqueness, addWifiEndpoint } from "../../allEndPoints/router"
 
-import { Alert, Row, Col, Form, Button, Modal, ModalBody, ModalFooter, ModalHeader, Input, Table, Card, CardBod, CardTitle, CardBody, CardSubtitle, CardLink, CardText } from 'reactstrap';
+import { ToastBody, ToastHeader, Alert, Row, Col, Form, Button, Modal, ModalBody, ModalFooter, ModalHeader, Input, Table, Card, CardBod, CardTitle, CardBody, CardSubtitle, CardLink, CardText, Toast } from 'reactstrap';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+import CustomNavbarView from "../customNavbarComponent/customNavbarView"
+
 
 const containerStyle = {
     width: '100%',
-    height: '400px'
+    height: '100vh'
 };
 
 const center = {
@@ -28,6 +33,7 @@ export default function MapView() {
     const [newProv, setNewProv] = useState("");
     const [newBoro, setNewBoro] = useState("");
     const [newWifiID, setNewWifiID] = useState("");
+    const [toastOpen, setToastOpen] = useState(false);
 
     useEffect(() => {
         const requestOptions = {
@@ -91,6 +97,11 @@ export default function MapView() {
 
     function addNewWifi() {
         console.log(newWifiID)
+        let admin = localStorage.getItem('admin')
+        if(admin == "false"){
+            alert("User not authorised to add wifis")
+            return
+        }
         if (newWifiName !== '' && newWifiID !== "" && newProv !== "" && newBoro !== "" && newLat != "" && newLong !== "") {
             fetch(checkUniqueness + "?id=" + newWifiID, {
                 method: "GET"
@@ -107,7 +118,7 @@ export default function MapView() {
                                 "borough": newBoro,
                                 "latitude": newLat,
                                 "longitude": newLong,
-                                "admin": true // Change this based on the auth token details
+                                "admin": true // Change this based on the atz
                             })
                         }
 
@@ -136,10 +147,10 @@ export default function MapView() {
                 });
 
         }
-        else{
-            <Alert color="primary">
-              Hey! Pay attention.
-            </Alert>
+        else {
+            alert("One or more missing fields")
+            // setToastOpen(true);
+            // // setTimeout(() => setToastOpen(false), 3000);
         }
     }
 
@@ -190,6 +201,7 @@ export default function MapView() {
 
     return (
         <>
+            {/* <CustomNavbarView/> */}
             <LoadScript googleMapsApiKey={apiKey}>
                 <GoogleMap
                     mapContainerClassName="GoogleMap"
@@ -263,7 +275,7 @@ export default function MapView() {
                                 <Input onChange={(e) => setWifiIDValue(e)} placeholder='Enter a unique wifi ID' />
                             </Col>
                         </Row>
-                        <br/>
+                        <br />
                         <Row>
                             <Col md={6}>
                                 <Input disabled value={"Lat: " + newLat} />
@@ -272,7 +284,7 @@ export default function MapView() {
                                 <Input disabled value={"Long: " + newLong} />
                             </Col>
                         </Row>
-                        <br/>
+                        <br />
                         <Row>
                             <Col md={6}>
                                 <Input onChange={(e) => setProviderValue(e)} placeholder='Enter the name of the Provider' />
@@ -292,6 +304,15 @@ export default function MapView() {
                     </Button>
                 </ModalFooter>
             </Modal>
+            {/* <ToastContainer /> */}
+            {/* <Toast isOpen={toastOpen} style={{ zIndex: 100 }}>
+                <ToastHeader icon="danger">
+                One or more fields are missing.
+                </ToastHeader>
+                <ToastBody>
+                    asda
+                </ToastBody>
+            </Toast> */}
         </>
 
     )

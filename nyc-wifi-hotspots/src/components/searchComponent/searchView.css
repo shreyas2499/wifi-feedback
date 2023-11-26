@@ -18,3 +18,9 @@ th svg.desc {
 .cursorStyle{
     cursor: pointer;
 }
+
+.addStyles{
+    border: 1px solid!important;
+    margin-top: 10px!important;
+    margin-bottom: 10px!important;
+}
