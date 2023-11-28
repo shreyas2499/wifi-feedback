@@ -8,6 +8,8 @@ export const addWifiEndpoint = url + "addWifi";
 
 export const checkUniqueness = url + "checkUniqueWifiId";
 
+export const deleteWifiEndpoint = url + "deleteWifi";
+
 
 
 export const addReview = url + "addReview";
@@ -21,7 +23,7 @@ export const userLogin = url + "login";
 
 export const getAllUsers = url + "allUsers";
 
-export const signUp = url + "signUp";
+export const signUp = url + "signup";
 
-export const resetPassword = url + "resetPassword";
+export const resetPasswordEndpoint= url + "resetPassword";
 

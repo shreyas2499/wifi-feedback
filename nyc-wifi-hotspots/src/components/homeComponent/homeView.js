@@ -7,7 +7,7 @@ export default function HomeView() {
     return (
         <>
             <div className="App">
-                <CustomNavbarView/>
+                <CustomNavbarView />
                 <main>
                     <MapView />
                 </main>
@@ -19,4 +19,3 @@ export default function HomeView() {
 
     )
 }
-

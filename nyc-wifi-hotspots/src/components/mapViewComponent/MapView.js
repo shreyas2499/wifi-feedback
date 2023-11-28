@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
-import { getWifiList, addReview, checkUniqueness, addWifiEndpoint } from "../../allEndPoints/router"
+import { getWifiList, addReview, checkUniqueness, addWifiEndpoint, deleteWifiEndpoint } from "../../allEndPoints/router"
 
 import { ToastBody, ToastHeader, Alert, Row, Col, Form, Button, Modal, ModalBody, ModalFooter, ModalHeader, Input, Table, Card, CardBod, CardTitle, CardBody, CardSubtitle, CardLink, CardText, Toast } from 'reactstrap';
-import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 import CustomNavbarView from "../customNavbarComponent/customNavbarView"
@@ -33,7 +32,9 @@ export default function MapView() {
     const [newProv, setNewProv] = useState("");
     const [newBoro, setNewBoro] = useState("");
     const [newWifiID, setNewWifiID] = useState("");
-    const [toastOpen, setToastOpen] = useState(false);
+    const [alertMessage, setAlertMessage] = useState("")
+    const [visible, setVisible] = useState(false);
+
 
     useEffect(() => {
         const requestOptions = {
@@ -58,6 +59,7 @@ export default function MapView() {
     function handleMarkerClick(hotspot) {
         setReviewPopup(false);
         console.log("Clicked hotspot:", hotspot);
+        setVisible(false)
         setSelectedHotspot(hotspot);
         toggle();
     }
@@ -92,16 +94,29 @@ export default function MapView() {
         setNewLong(ev.latLng.lng())
         console.log("latitide = ", ev.latLng.lat());
         console.log("longitude = ", ev.latLng.lng());
+        setVisible(false)
         toggleNew();
     }
 
     function addNewWifi() {
-        console.log(newWifiID)
-        let admin = localStorage.getItem('admin')
-        if(admin == "false"){
-            alert("User not authorised to add wifis")
+        if (!localStorage.getItem("token")) {
+            setAlertMessage("Please login to add a review")
+            setVisible(true)
             return
         }
+        console.log(newWifiID)
+        let admin = localStorage.getItem('admin')
+        if (admin == "false") {
+            setAlertMessage("User not authorised to add wifis")
+            setVisible(true)
+            return
+        }
+        if (newWifiName == '' || newWifiID == "" || newProv == "" || newBoro == "" || newLat == "" || newLong == "") {
+            setAlertMessage("One or more fields missing")
+            setVisible(true)
+            return
+        }
+
         if (newWifiName !== '' && newWifiID !== "" && newProv !== "" && newBoro !== "" && newLat != "" && newLong !== "") {
             fetch(checkUniqueness + "?id=" + newWifiID, {
                 method: "GET"
@@ -125,6 +140,8 @@ export default function MapView() {
                         fetch(addWifiEndpoint, requestOptions)
                             .then(response => response.json())
                             .then(data => {
+                                setAlertMessage("New Wifi has been added")
+                                setVisible(true)
                                 const requestOptions = {
                                     method: "POST",
                                     body: JSON.stringify({
@@ -139,8 +156,9 @@ export default function MapView() {
                                     .then(response => response.json())
                                     .then(data => {
                                         console.log("Loaded hotspots:", data);
-                                        setHotspots(data.data)
                                         toggleNew()
+                                        setHotspots(data.data)
+                                        // toggleNew()
                                     });
                             });
                     }
@@ -148,13 +166,21 @@ export default function MapView() {
 
         }
         else {
-            alert("One or more missing fields")
+            setAlertMessage("One or more missing fields")
+            setVisible(true)
             // setToastOpen(true);
             // // setTimeout(() => setToastOpen(false), 3000);
         }
     }
 
     function addReviewToDB() {
+        setVisible(false)
+        setAlertMessage("")
+        if (!localStorage.getItem("token")) {
+            setAlertMessage("Please login to add a review")
+            setVisible(true)
+            return
+        }
         if (addedReview != "") {
             const requestOptions = {
                 method: "POST",
@@ -162,11 +188,11 @@ export default function MapView() {
                     "review": addedReview,
                     "wifiName": selectedHotspot.wifiName,
                     "wifiID": selectedHotspot.wifiID,
-                    "user": "shreyas@gmail.com",     // Needs to be updated once the login part is done
+                    "user": localStorage.getItem("email"),     // Needs to be updated once the login part is done
                     "lat": selectedHotspot.latitude,
                     "long": selectedHotspot.longitude,
                     "provider": selectedHotspot.provider,
-                    "borough": selectedHotspot.borough
+                    "boroughName": selectedHotspot.boroughName
                 })
             }
 
@@ -175,6 +201,49 @@ export default function MapView() {
                 .then(fetchWfi)
                 .then(toggle)
         }
+        else{
+            setAlertMessage("Please add a review")
+            setVisible(true)
+            return
+        }
+    }
+
+    function deleteWifi(){
+        if (!localStorage.getItem("token")) {
+            setAlertMessage("Please login to add a review")
+            setVisible(true)
+            return
+        }
+        const requestOptions = {
+            method: "POST",
+            body: JSON.stringify({
+                "wifiName": selectedHotspot.wifiName,
+                "wifiID": selectedHotspot.wifiID,
+                "user": localStorage.getItem("email"),
+                "admin": localStorage.getItem("admin")
+            })
+        }
+
+        fetch(deleteWifiEndpoint, requestOptions)
+            .then(response => response.json())
+            .then(data => {
+                if(data["message"] == "Wifi Not deleted"){
+                    setAlertMessage("Wifi not deleted. Please try again later")
+                    setVisible(true)
+                    return
+                }
+                else if(data["message"] == "User doesn't have permission to delete Wifis"){
+                    setAlertMessage("User doesn't have permission to delete Wifi")
+                    setVisible(true)
+                    return
+                }
+                else{
+                    toggle();
+                }
+            })
+            .then(fetchWfi)
+            // .then(toggle)
+
     }
 
     function setWifiNameValue(e) {
@@ -199,6 +268,8 @@ export default function MapView() {
 
     const toggleNew = () => setAddWifi(!addWifi);
 
+    const onDismiss = () => setVisible(false);
+
     return (
         <>
             {/* <CustomNavbarView/> */}
@@ -222,37 +293,27 @@ export default function MapView() {
             <Modal isOpen={reviewPopup} toggle={toggle} fade="true" size='lg'>
                 <ModalHeader toggle={toggle}>Add a review for: {selectedHotspot.wifiName}</ModalHeader>
                 <ModalBody>
-                    {/* <div className='container' style={{ maxHeight: "250px", overflowY: "scroll", marginBottom: "15px" }}>
-                        {selectedHotspot['reviews'] && selectedHotspot['reviews'].length > 0 ? (
-                            selectedHotspot['reviews'].map((rev, index) => (
-
-                                <Card style={{ width: '100%', marginBottom: "10px" }}>
-                                    <CardBody>
-                                        <CardTitle tag="h5">
-                                            {rev.review}
-                                        </CardTitle>
-                                    </CardBody>
-                                    <CardBody>
-                                        <CardText>
-                                            {rev.user}<br />
-                                            {rev.datetime}
-                                        </CardText>
-                                    </CardBody>
-                                </Card>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan="2">No reviews available.</td>
-                            </tr>
-                        )}
-                    </div> */}
-
                     <Input onChange={(e) => enterReview(e)} type="textarea" placeholder='Enter your review...' />
+                    <br/>
+                    <Alert color="danger" isOpen={visible} toggle={onDismiss}>
+                        {alertMessage}
+                    </Alert>
                 </ModalBody>
                 <ModalFooter>
                     <Button color="primary" onClick={addReviewToDB}>
                         Submit
                     </Button>{' '}
+                    {localStorage.getItem("admin") == "true" ?
+                        <>
+                            <Button color="danger" onClick={deleteWifi}>
+                                Delete Wifi
+                            </Button>{" "}
+                        </>
+                        :
+                        <>
+                        </>
+                    }
+
                     <Button color="secondary" onClick={toggle}>
                         Close
                     </Button>
@@ -260,59 +321,56 @@ export default function MapView() {
             </Modal>
 
 
-
-            <Modal isOpen={addWifi} toggle={toggleNew} fade="true" size='lg'>
-                <ModalHeader toggle={toggleNew}>Hello, Admin! Enter the new Wifi details below</ModalHeader>
-                <ModalBody>
-
-
-                    <Form>
-                        <Row>
-                            <Col md={6}>
-                                <Input onChange={(e) => setWifiNameValue(e)} placeholder='Enter the wifi name' />
-                            </Col>
-                            <Col md={6}>
-                                <Input onChange={(e) => setWifiIDValue(e)} placeholder='Enter a unique wifi ID' />
-                            </Col>
-                        </Row>
-                        <br />
-                        <Row>
-                            <Col md={6}>
-                                <Input disabled value={"Lat: " + newLat} />
-                            </Col>
-                            <Col md={6}>
-                                <Input disabled value={"Long: " + newLong} />
-                            </Col>
-                        </Row>
-                        <br />
-                        <Row>
-                            <Col md={6}>
-                                <Input onChange={(e) => setProviderValue(e)} placeholder='Enter the name of the Provider' />
-                            </Col>
-                            <Col md={6}>
-                                <Input onChange={(e) => setBoroughValue(e)} placeholder='Enter the Borough' />
-                            </Col>
-                        </Row>
-                    </Form>
-                </ModalBody>
-                <ModalFooter>
-                    <Button color="primary" onClick={addNewWifi}>
-                        Submit
-                    </Button>{' '}
-                    <Button color="secondary" onClick={toggleNew}>
-                        Close
-                    </Button>
-                </ModalFooter>
-            </Modal>
-            {/* <ToastContainer /> */}
-            {/* <Toast isOpen={toastOpen} style={{ zIndex: 100 }}>
-                <ToastHeader icon="danger">
-                One or more fields are missing.
-                </ToastHeader>
-                <ToastBody>
-                    asda
-                </ToastBody>
-            </Toast> */}
+            {localStorage.getItem('admin') == "true" ?
+                <Modal isOpen={addWifi} toggle={toggleNew} fade="true" size='lg'>
+                    <ModalHeader toggle={toggleNew}>Hello, Admin! Enter the new Wifi details below</ModalHeader>
+                    <ModalBody>
+                        <Form>
+                            <Row>
+                                <Col md={6}>
+                                    <Input onChange={(e) => setWifiNameValue(e)} placeholder='Enter the wifi name' />
+                                </Col>
+                                <Col md={6}>
+                                    <Input onChange={(e) => setWifiIDValue(e)} placeholder='Enter a unique wifi ID' />
+                                </Col>
+                            </Row>
+                            <br />
+                            <Row>
+                                <Col md={6}>
+                                    <Input disabled value={"Lat: " + newLat} />
+                                </Col>
+                                <Col md={6}>
+                                    <Input disabled value={"Long: " + newLong} />
+                                </Col>
+                            </Row>
+                            <br />
+                            <Row>
+                                <Col md={6}>
+                                    <Input onChange={(e) => setProviderValue(e)} placeholder='Enter the name of the Provider' />
+                                </Col>
+                                <Col md={6}>
+                                    <Input onChange={(e) => setBoroughValue(e)} placeholder='Enter the Borough' />
+                                </Col>
+                            </Row>
+                            <Row>
+                                <Alert color={alertMessage == 'New Wifi has been added' ? 'success' : 'danger'} isOpen={visible} toggle={onDismiss}>
+                                    {alertMessage}
+                                </Alert>
+                            </Row>
+                        </Form>
+                    </ModalBody>
+                    <ModalFooter>
+                        <Button color="primary" onClick={addNewWifi}>
+                            Submit
+                        </Button>{' '}
+                        <Button color="secondary" onClick={toggleNew}>
+                            Close
+                        </Button>
+                    </ModalFooter>
+                </Modal>
+                :
+                <></>
+            }
         </>
 
     )

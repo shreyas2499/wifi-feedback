@@ -265,7 +265,7 @@ export default function SearchView() {
                                     <CardBody>
                                         <CardText>
                                             {rev.user}<br />
-                                            {rev.datetime}
+                                            {new Date(rev.datetime).toLocaleString()}
                                         </CardText>
                                     </CardBody>
                                 </Card>
