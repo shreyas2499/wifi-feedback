@@ -226,7 +226,7 @@ export default function SearchView() {
                 </Form>
             </div>
 
-            {hotspots != undefined && hotspots.length > 1 ?
+            {hotspots != undefined && hotspots.length >= 1 ?
                 <div className="container">
                     <Table bordered hover striped>
                         <thead>
@@ -295,7 +295,7 @@ export default function SearchView() {
                                     <CardBody>
                                         <CardText>
                                             {rev.user}<br />
-                                            {new Date(rev.datetime).toLocaleString()}
+                                            {rev.datetime}
                                         </CardText>
                                     </CardBody>
                                 </Card>
