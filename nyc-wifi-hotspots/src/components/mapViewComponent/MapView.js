@@ -5,6 +5,7 @@ import { getWifiList, addReview, checkUniqueness, addWifiEndpoint, deleteWifiEnd
 import { ToastBody, ToastHeader, Alert, Row, Col, Form, Button, Modal, ModalBody, ModalFooter, ModalHeader, Input, Table, Card, CardBod, CardTitle, CardBody, CardSubtitle, CardLink, CardText, Toast } from 'reactstrap';
 import 'react-toastify/dist/ReactToastify.css';
 
+import "./MapView.css"
 import CustomNavbarView from "../customNavbarComponent/customNavbarView"
 
 
@@ -34,6 +35,7 @@ export default function MapView() {
     const [newWifiID, setNewWifiID] = useState("");
     const [alertMessage, setAlertMessage] = useState("")
     const [visible, setVisible] = useState(false);
+    const [rating, setRating] = useState("0")
 
 
     useEffect(() => {
@@ -98,6 +100,21 @@ export default function MapView() {
         console.log("longitude = ", ev.latLng.lng());
         setVisible(false)
         toggleNew();
+    }
+
+    function calculateRating(ratingList){
+        let rating = 0 
+        let count = 0
+        if(ratingList!=undefined){
+            for (let i = 0; i < ratingList.length; i++) {
+                rating = rating + parseInt(ratingList[i])
+                count = count + 1
+              }
+    
+            return rating/count
+        }
+        
+        return 0
     }
 
     function addNewWifi() {
@@ -184,11 +201,18 @@ export default function MapView() {
             setVisible(true)
             return
         }
+        if(rating == "0"){
+            setAlertMessage("Please select a rating for the wifi (1 being the worst and 5 being the best)")
+            setVisible(true)
+            return
+        }
+
         if (addedReview != "") {
             const requestOptions = {
                 method: "POST",
                 body: JSON.stringify({
                     "review": addedReview,
+                    "rating": rating,
                     "wifiName": selectedHotspot.wifiName,
                     "wifiID": selectedHotspot.wifiID,
                     "user": localStorage.getItem("email"),     // Needs to be updated once the login part is done
@@ -204,14 +228,14 @@ export default function MapView() {
                 .then(fetchWfi)
                 .then(toggle)
         }
-        else{
+        else {
             setAlertMessage("Please add a review")
             setVisible(true)
             return
         }
     }
 
-    function deleteWifi(){
+    function deleteWifi() {
         if (!localStorage.getItem("token")) {
             setAlertMessage("Please login to add a review")
             setVisible(true)
@@ -230,22 +254,22 @@ export default function MapView() {
         fetch(deleteWifiEndpoint, requestOptions)
             .then(response => response.json())
             .then(data => {
-                if(data["message"] == "Wifi Not deleted"){
+                if (data["message"] == "Wifi Not deleted") {
                     setAlertMessage("Wifi not deleted. Please try again later")
                     setVisible(true)
                     return
                 }
-                else if(data["message"] == "User doesn't have permission to delete Wifis"){
+                else if (data["message"] == "User doesn't have permission to delete Wifis") {
                     setAlertMessage("User doesn't have permission to delete Wifi")
                     setVisible(true)
                     return
                 }
-                else{
+                else {
                     toggle();
                 }
             })
             .then(fetchWfi)
-            // .then(toggle)
+        // .then(toggle)
 
     }
 
@@ -294,7 +318,7 @@ export default function MapView() {
                 </GoogleMap>
             </LoadScript>
             <Modal isOpen={reviewPopup} toggle={toggle} fade="true" size='lg'>
-                <ModalHeader toggle={toggle}>Add a review for: {selectedHotspot.wifiName}</ModalHeader>
+                <ModalHeader style={{color:"black"}} toggle={toggle}>Add a review for: {selectedHotspot.wifiName}</ModalHeader>
                 <ModalBody>
                     <Table bordered hover striped>
                         <thead>
@@ -302,18 +326,65 @@ export default function MapView() {
                             <th>Remarks</th>
                             <th>Location</th>
                             <th>Provider</th>
+                            <th>Rating(5)</th>
                         </thead>
                         <tbody>
                             <tr>
                                 <td>{selectedHotspot.ssid}</td>
-                                <td>{selectedHotspot.remarks !== ""? selectedHotspot.remarks : '-'}</td>
+                                <td>{selectedHotspot.remarks !== "" ? selectedHotspot.remarks : '-'}</td>
                                 <td>{selectedHotspot.location}</td>
                                 <td>{selectedHotspot.provider}</td>
+                                <td>{calculateRating(selectedHotspot.rating).toFixed(2)}</td>
                             </tr>
                         </tbody>
                     </Table>
                     <Input onChange={(e) => enterReview(e)} type="textarea" placeholder='Enter your review...' />
-                    <br/>
+                    <br />
+
+                    <span style={{color:"black"}}>Select a rating for the Wifi:</span>
+
+
+                    <div class="container-rating">
+                        <div class="container__items">
+                            <input type="radio" name="stars" id="st5" onClick={() => setRating("5")}/>
+                            <label for="st5">
+                                <div class="star-stroke">
+                                    <div class="star-fill"></div>
+                                </div>
+                                <div class="label-description"></div>
+                            </label>
+                            <input type="radio" name="stars" id="st4" onClick={() => setRating("4")}/>
+                            <label for="st4">
+                                <div class="star-stroke">
+                                    <div class="star-fill"></div>
+                                </div>
+                                <div class="label-description"></div>
+                            </label>
+                            <input type="radio" name="stars" id="st3" onClick={() => setRating("3")}/>
+                            <label for="st3">
+                                <div class="star-stroke">
+                                    <div class="star-fill"></div>
+                                </div>
+                                <div class="label-description"></div>
+                            </label>
+                            <input type="radio" name="stars" id="st2" onClick={() => setRating("2")} />
+                            <label for="st2">
+                                <div class="star-stroke">
+                                    <div class="star-fill"></div>
+                                </div>
+                                <div class="label-description"></div>
+                            </label>
+                            <input type="radio" name="stars" id="st1" onClick={() => setRating("1")}/>
+                            <label for="st1">
+                                <div class="star-stroke">
+                                    <div class="star-fill"></div>
+                                </div>
+
+                                <div class="label-description"></div>
+                            </label>
+                        </div>
+                    </div>
+
                     <Alert color="danger" isOpen={visible} toggle={onDismiss}>
                         {alertMessage}
                     </Alert>

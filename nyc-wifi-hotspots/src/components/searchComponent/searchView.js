@@ -131,6 +131,23 @@ export default function SearchView() {
             });
     }
 
+
+    function calculateRating(ratingList){
+        let rating = 0 
+        let count = 0
+        if(ratingList!=undefined){
+            for (let i = 0; i < ratingList.length; i++) {
+                rating = rating + parseInt(ratingList[i])
+                count = count + 1
+              }
+    
+            return rating/count
+        }
+        
+        return 0
+    }
+
+
     return (
         <>
            <CustomNavbarView/>
@@ -220,7 +237,7 @@ export default function SearchView() {
                                 WifiID <Caret direction={idSort ? "desc" : "asc"} />
                             </th>
                             <th className="cursorStyle" onClick={() => sorting("wifiName")}>
-                                Wifi Name <Caret direction={nameSort ? "desc" : "asc"} />
+                                Wifi Name (Rating)<Caret direction={nameSort ? "desc" : "asc"} />
                             </th>
                             <th className="cursorStyle" onClick={() => sorting("provider")}>
                                 Provider <Caret direction={provSort ? "desc" : "asc"} />
@@ -240,7 +257,7 @@ export default function SearchView() {
                                     {hotspot.wifiID}
                                 </td>
                                 <td>
-                                    {hotspot.wifiName}
+                                    {hotspot.wifiName} ({calculateRating(hotspot.rating).toFixed(2)})
                                 </td>
                                 <td>
                                     {hotspot.provider}
