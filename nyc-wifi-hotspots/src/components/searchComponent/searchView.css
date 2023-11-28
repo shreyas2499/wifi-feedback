@@ -24,3 +24,13 @@ th svg.desc {
     margin-top: 10px!important;
     margin-bottom: 10px!important;
 }
+
+.emptyHotspots{
+    margin: auto;
+    justify-content: center;
+    flex-wrap: wrap;
+    display: flex;
+    width: 50%;
+    align-items: center;
+    align-content: center;
+}

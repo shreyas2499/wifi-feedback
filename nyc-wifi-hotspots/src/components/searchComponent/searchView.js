@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Row, Col, FormGroup, Label, Button, Modal, ModalBody, ModalFooter, ModalHeader, Input, Table, Card, CardBod, CardTitle, CardBody, CardSubtitle, CardLink, CardText } from 'reactstrap';
+import { Alert, Form, Row, Col, FormGroup, Label, Button, Modal, ModalBody, ModalFooter, ModalHeader, Input, Table, Card, CardBod, CardTitle, CardBody, CardSubtitle, CardLink, CardText } from 'reactstrap';
 import { getWifiList } from "../../allEndPoints/router"
 import "./searchView.css"
 import Caret from "../iconsComponent/caretDown"
@@ -20,17 +20,17 @@ export default function SearchView() {
     const [wifiProvider, setProvider] = useState("");
 
     useEffect(() => {
-        if(localStorage.getItem("hotspots")!=null){
+        if (localStorage.getItem("hotspots") != null) {
             setHotspots(JSON.parse(localStorage.getItem("hotspots")))
         }
-        
+
         const requestOptions = {
-            method: "POST", 
+            method: "POST",
             body: JSON.stringify({
-              "wifiName": "",
-              "wifiID": "",
-              "provider": "",
-              "borough": ""
+                "wifiName": "",
+                "wifiID": "",
+                "provider": "",
+                "borough": ""
             })
         }
 
@@ -95,31 +95,31 @@ export default function SearchView() {
     const toggle = () => setReviewPopup(!reviewPopup);
 
 
-    function id(e){
+    function id(e) {
         setWifiID(e.target.value)
     }
 
-    function name(e){   
+    function name(e) {
         setWifiName(e.target.value)
     }
-    
-    function borough(e){
+
+    function borough(e) {
         setBorough(e.target.value)
     }
 
-    function provider(e){
+    function provider(e) {
         setProvider(e.target.value)
     }
 
 
-    function submitFilter(){
+    function submitFilter() {
         const requestOptions = {
-            method: "POST", 
+            method: "POST",
             body: JSON.stringify({
-              "wifiName": wifiName,
-              "wifiID": wifiIDFilter,
-              "provider": wifiProvider,
-              "borough": wifiBorough
+                "wifiName": wifiName,
+                "wifiID": wifiIDFilter,
+                "provider": wifiProvider,
+                "borough": wifiBorough
             })
         }
 
@@ -132,27 +132,27 @@ export default function SearchView() {
     }
 
 
-    function calculateRating(ratingList){
-        let rating = 0 
+    function calculateRating(ratingList) {
+        let rating = 0
         let count = 0
-        if(ratingList!=undefined){
+        if (ratingList != undefined) {
             for (let i = 0; i < ratingList.length; i++) {
                 rating = rating + parseInt(ratingList[i])
                 count = count + 1
-              }
-    
-            return rating/count
+            }
+
+            return rating / count
         }
-        
+
         return 0
     }
 
 
     return (
         <>
-           <CustomNavbarView/>
-            <div className='container addedStyles' style={{border: "1px solid!important", marginTop: "10px!important", marginBottom: "10px!important"}}>
-                <Form style={{marginTop: "15px", marginBottom: "15px"}}>
+            <CustomNavbarView />
+            <div className='container addedStyles' style={{ border: "1px solid!important", marginTop: "10px!important", marginBottom: "10px!important" }}>
+                <Form style={{ marginTop: "15px", marginBottom: "15px" }}>
                     <Row>
                         <Col md={2}>
                             <FormGroup>
@@ -217,7 +217,7 @@ export default function SearchView() {
                                     {/* Provider */}
                                 </Label>
                                 <br />
-                                <Button style={{marginTop: "2%"}} onClick={() => submitFilter()}  color="success">
+                                <Button style={{ marginTop: "2%" }} onClick={() => submitFilter()} color="success">
                                     Search
                                 </Button>
                             </FormGroup>
@@ -226,50 +226,59 @@ export default function SearchView() {
                 </Form>
             </div>
 
-            <div className="container">
-                <Table bordered hover striped>
-                    <thead>
-                        <tr>
-                            <th className='cursorStyle'>
-                                Sl. No
-                            </th>
-                            <th className="cursorStyle" onClick={() => sorting("wifiID")}>
-                                WifiID <Caret direction={idSort ? "desc" : "asc"} />
-                            </th>
-                            <th className="cursorStyle" onClick={() => sorting("wifiName")}>
-                                Wifi Name (Rating)<Caret direction={nameSort ? "desc" : "asc"} />
-                            </th>
-                            <th className="cursorStyle" onClick={() => sorting("provider")}>
-                                Provider <Caret direction={provSort ? "desc" : "asc"} />
-                            </th>
-                            <th className="cursorStyle" onClick={() => sorting("boroughName")}>
-                                Borough <Caret direction={borSort ? "desc" : "asc"} />
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {hotspots.map((hotspot, index) => (
-                            <tr scope="row" onClick={() => handleMarkerClick(hotspot)}>
-                                <td>
-                                    {index + 1}
-                                </td>
-                                <td>
-                                    {hotspot.wifiID}
-                                </td>
-                                <td>
-                                    {hotspot.wifiName} ({calculateRating(hotspot.rating).toFixed(2)})
-                                </td>
-                                <td>
-                                    {hotspot.provider}
-                                </td>
-                                <td>
-                                    {hotspot.boroughName}
-                                </td>
+            {hotspots != undefined && hotspots.length > 1 ?
+                <div className="container">
+                    <Table bordered hover striped>
+                        <thead>
+                            <tr>
+                                <th className='cursorStyle'>
+                                    Sl. No
+                                </th>
+                                <th className="cursorStyle" onClick={() => sorting("wifiID")}>
+                                    WifiID <Caret direction={idSort ? "desc" : "asc"} />
+                                </th>
+                                <th className="cursorStyle" onClick={() => sorting("wifiName")}>
+                                    Wifi Name (Rating)<Caret direction={nameSort ? "desc" : "asc"} />
+                                </th>
+                                <th className="cursorStyle" onClick={() => sorting("provider")}>
+                                    Provider <Caret direction={provSort ? "desc" : "asc"} />
+                                </th>
+                                <th className="cursorStyle" onClick={() => sorting("boroughName")}>
+                                    Borough <Caret direction={borSort ? "desc" : "asc"} />
+                                </th>
                             </tr>
-                        ))}
-                    </tbody>
-                </Table>
-            </div>
+                        </thead>
+                        <tbody>
+                            {hotspots.map((hotspot, index) => (
+                                <tr scope="row" onClick={() => handleMarkerClick(hotspot)}>
+                                    <td>
+                                        {index + 1}
+                                    </td>
+                                    <td>
+                                        {hotspot.wifiID}
+                                    </td>
+                                    <td>
+                                        {hotspot.wifiName} ({calculateRating(hotspot.rating).toFixed(2)})
+                                    </td>
+                                    <td>
+                                        {hotspot.provider}
+                                    </td>
+                                    <td>
+                                        {hotspot.boroughName}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </Table>
+                </div>
+
+                :
+                <Alert color="danger" className="emptyHotspots">
+                    No hotspots with the given search
+                </Alert>
+            }
+
+
             <Modal isOpen={reviewPopup} toggle={toggle} fade="true" size='lg'>
                 <ModalHeader toggle={toggle}>Add a review for: {selectedHotspot.wifiName}</ModalHeader>
                 <ModalBody>
