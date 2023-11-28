@@ -20,6 +20,10 @@ export default function SearchView() {
     const [wifiProvider, setProvider] = useState("");
 
     useEffect(() => {
+        if(localStorage.getItem("hotspots")!=null){
+            setHotspots(JSON.parse(localStorage.getItem("hotspots")))
+        }
+        
         const requestOptions = {
             method: "POST", 
             body: JSON.stringify({

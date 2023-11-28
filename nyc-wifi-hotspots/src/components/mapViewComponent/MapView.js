@@ -51,6 +51,7 @@ export default function MapView() {
             .then(response => response.json())
             .then(data => {
                 console.log("Loaded hotspots:", data);
+                localStorage.setItem("hotspots", JSON.stringify(data.data))
                 setHotspots(data.data)
             });
     }, []);
@@ -85,6 +86,7 @@ export default function MapView() {
             .then(data => {
                 console.log("Loaded hotspots:", data);
                 setHotspots(data.data)
+                localStorage.setItem("hotspots", JSON.stringify(data.data))
             });
     }
 
@@ -156,6 +158,7 @@ export default function MapView() {
                                     .then(response => response.json())
                                     .then(data => {
                                         console.log("Loaded hotspots:", data);
+                                        localStorage.setItem("hotspots", JSON.stringify(data.data))
                                         toggleNew()
                                         setHotspots(data.data)
                                         // toggleNew()
@@ -293,6 +296,22 @@ export default function MapView() {
             <Modal isOpen={reviewPopup} toggle={toggle} fade="true" size='lg'>
                 <ModalHeader toggle={toggle}>Add a review for: {selectedHotspot.wifiName}</ModalHeader>
                 <ModalBody>
+                    <Table bordered hover striped>
+                        <thead>
+                            <th>SSID</th>
+                            <th>Remarks</th>
+                            <th>Location</th>
+                            <th>Provider</th>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>{selectedHotspot.ssid}</td>
+                                <td>{selectedHotspot.remarks !== ""? selectedHotspot.remarks : '-'}</td>
+                                <td>{selectedHotspot.location}</td>
+                                <td>{selectedHotspot.provider}</td>
+                            </tr>
+                        </tbody>
+                    </Table>
                     <Input onChange={(e) => enterReview(e)} type="textarea" placeholder='Enter your review...' />
                     <br/>
                     <Alert color="danger" isOpen={visible} toggle={onDismiss}>
