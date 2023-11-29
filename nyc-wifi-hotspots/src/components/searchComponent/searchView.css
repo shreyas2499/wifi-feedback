@@ -1,0 +1,36 @@
+th {
+    background-color: #ddd;
+}
+
+th svg {
+    max-width: 25px;
+    max-height: 25px;
+}
+
+th svg.asc {
+    transform: rotate(0deg);
+}
+
+th svg.desc {
+    transform: rotate(180deg);
+}
+
+.cursorStyle{
+    cursor: pointer;
+}
+
+.addStyles{
+    border: 1px solid!important;
+    margin-top: 10px!important;
+    margin-bottom: 10px!important;
+}
+
+.emptyHotspots{
+    margin: auto;
+    justify-content: center;
+    flex-wrap: wrap;
+    display: flex;
+    width: 50%;
+    align-items: center;
+    align-content: center;
+}

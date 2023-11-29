@@ -1,20 +1,21 @@
+import { Routes, Route } from 'react-router-dom';
 import React from 'react';
 import './App.css';
-import MapView from './components/MapView';
+import HomeView from "./components/homeComponent/homeView";
+import SearchView from "./components/searchComponent/searchView"
+import NotFoundView from "./components/404Component/notFoundView"
+import LoginPage from "./components/loginComponent/loginView"
 
 function App() {
     return (
-        <div className="App">
-            <header className="App-header">
-                <h1>NYC Wi-Fi Hotspots Explorer</h1>
-            </header>
-            <main>
-                <MapView />
-            </main>
-            <footer>
-                <p>© 2023 NYC Wi-Fi Hotspots Project</p>
-            </footer>
-        </div>
+        <>
+            <Routes>
+                <Route path="/" element={<HomeView />} />
+                <Route path="/search" element={<SearchView />} />
+                {/* <Route path="/login" element={<LoginPage />} /> */}
+                <Route path="*" element={<NotFoundView />} />
+            </Routes>
+        </>
     );
 }
 

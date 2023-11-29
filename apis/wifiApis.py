@@ -137,13 +137,13 @@ def add_review():
     data = json.loads(request.data)
 
     review = data["review"]
-    wifiName = data["name"]
+    wifiName = data["wifiName"]
     wifiID = data["wifiID"]
     user = data["user"]
     lat = data.get("lat", False)
     long = data.get("long", False)
     provider = data["provider"]
-    borough = int(data["borough"])    # Assuming Borough ID is getting passed.
+    borough = data["borough"]    # Assuming Borough ID is getting passed.
 
 
     try:
@@ -152,10 +152,10 @@ def add_review():
             "datetime": datetime.today(),
             "user": user
         }
-        query = {"wifiID":wifiID, "Borough": borough, "Provider": provider, "Name": wifiName}
-        update = {"$addToSet": {"Reviews": review_data}}
+        query = {"wifiID":wifiID, "borough": borough, "provider": provider, "wifiName": wifiName}
+        update = {"$addToSet": {"reviews": review_data}}
 
-        mongo.db.wifiList.update_one(query, update, upsert=True)
+        mongo.db.wifiList.update_one(query, update)
     
         return jsonify({STATUS_MESSAGE: "Review added"}), 200
     except Exception as e:
@@ -171,12 +171,12 @@ def get_reviews():
     wifiID = data["wifiID"]
     wifiName = data["name"]
     provider = data["provider"]
-    borough = int(data["borough"])    # Assuming Borough ID is getting passed.
+    borough = data["borough"]    # Assuming Borough ID is getting passed.
 
     try:
        
-        query = {"wifiID": wifiID, "Borough": borough, "Provider": provider, "Name": wifiName}
-        projectionQuery = {"Reviews":1, "_id":0}
+        query = {"wifiID": wifiID, "borough": borough, "provider": provider, "wifiName": wifiName}
+        projectionQuery = {"reviews":1, "_id":0}
 
         reviewList = mongo.db.wifiList.find_one(query, projectionQuery)
 
@@ -190,21 +190,25 @@ def get_reviews():
 
 # Wifi Related APIs
 
-@app.route("/getWifiList", methods=["GET"])
+@app.route("/getWifiList", methods=["POST"])
 def get_wifi():
-    # Provider
-    # Borough Name
-
+    
     data = json.loads(request.data)
 
-    provider = data.get("provider", False)
-    borough = data.get("boroughName", False)
+    provider = data.get("provider", "")
+    borough = data.get("boroughName", "")
+    wifiID = data.get("wifiID", "")
+    wifiName = data.get("wifiName", "")
 
     query = {}
-    if(provider):
-        query["Provider"] = provider
-    elif(borough):
-        query["Borough Name"] = borough
+    if(provider != ""):
+        query["provider"] = provider
+    elif(borough != ""):
+        query["boroughName"] = borough
+    elif(wifiID != ""):
+        query["wifiID"] = wifiID
+    elif(wifiName != ""):
+        query["wifiName"] = wifiName
     
 
     projectionQuery = {"_id":0} # Add projections based on what is required 
@@ -218,6 +222,30 @@ def get_wifi():
         return jsonify({STATUS_MESSAGE: "Wifi fetch failed"}), 500
 
 
+@app.route("/checkUniqueWifiId", methods=["GET"])
+def check_unique_wifi_id():
+    # data = json.loads(request.data)
+    requestedId = request.args.get('id')
+
+    # admin = data.get("admin", False)
+    projectionQuery = {"_id":0, "wifiID":1}
+
+    try: 
+        wifiIDs = mongo.db.wifiList.find({}, projectionQuery)
+        wifiIDs = list(wifiIDs)
+        ids = []
+        for i in wifiIDs:
+            ids.append(i['wifiID'])
+
+        val = not requestedId in ids
+        return jsonify({STATUS: "List of Wifis", "unique": val}), 200
+
+    except Exception as e:
+        print(e)
+        return jsonify({STATUS_MESSAGE: "Wifi fetch failed"}), 500
+
+
+
 @app.route("/addWifi", methods=["POST"])
 def add_wifi():
     data = json.loads(request.data)
@@ -228,22 +256,22 @@ def add_wifi():
     # UPDATE THIS DEPENDING ON WHAT VALUES ARE REQUIRED IN THE FRONTEND
     if admin:
         # Add wifi ID here
-        wifiName = data["name"]
-        lat = data.get("lat", False)
-        long = data.get("long", False)
+        wifiName = data["wifiName"]
+        lat = data.get("latitude", False)
+        long = data.get("longitude", False)
         provider = data["provider"]
-        borough = int(data["borough"])    # Assuming Borough ID is getting passed.
-        boroughName = data["boroughName"]
+        boroughName = data["borough"]
+        wifiID = data["wifiID"]
 
         try: 
             query = {
-                "Provider":provider,
-                "Name": wifiName,
-                "Latitude": lat,
-                "Longitude": long,
-                "Borough": borough,
-                "Borough Name": boroughName,
-                "Activated": datetime.today()
+                "provider":provider,
+                "wifiName": wifiName,
+                "latitude": lat,
+                "longitude": long,
+                "boroughName": boroughName,
+                "wifiID": wifiID,
+                "activated": datetime.today()
             }
             mongo.db.wifiList.insert_one(query)
             return jsonify({STATUS: "Wifi Added Successfully"}), 200
@@ -258,16 +286,27 @@ def add_wifi():
 
 
 
+# Add API to check uniqueness of wifiID
+
+
 # Adding the dataset to DB
 
 # Run this only once manually
 @app.route("/insertValues", methods=["POST"])
 def insert_values():
-    df = pd.read_csv("wifi.csv")    
+    df = pd.read_csv("./wifi.csv")    
 
     df = df.reset_index()  # make sure indexes pair with number of rows
+
+    df = df[df['Name'].notna()]
+
+    df.replace(np.nan, '')
+
     wifiData = []
     for index, row in df.iterrows():
+        # print(row["Name"], "\n")
+        if(str(row["Name"]) == "nan"):
+            continue
         res = {
             "wifiID": str(row["OBJECTID"]),
             "borough": str(row["Borough"]),
@@ -280,7 +319,7 @@ def insert_values():
             "x": str(row["X"]),
             "y": str(row["Y"]),
             "locationT": row["Location_T"],
-            "remarks": row["Remarks"],
+            "remarks": row["Remarks"] if str(row["Remarks"]) != "nan" else "",
             "city": row["City"],
             "ssid": str(row["SSID"]),
             "sourceID": str(row["SourceID"]),
@@ -303,6 +342,8 @@ def insert_values():
         wifiData.append(res)
 
         mongo.db.wifiList.insert_one(res)
+    
+    # mongo.db.wifiList.update({"remarks": {"$eq": "NaN"}}, {"$set": {"remarks": ""}}, {"multi": True})
 
     return jsonify({STATUS: "Wifi Added Successfully to Database"}), 200
 
